@@ -21,10 +21,7 @@ sudo apt install systemd-container qemu-user-static qemu-utils debootstrap
 ```
 We'll also need to download the factorio headless server executable itself and extract it.
 ```
-wget https://www.factorio.com/get-download/stable/headless/linux64 -O ~/factorio-server.tar.xz
-# or curl https://www.factorio.com/get-download/stable/headless/linux64 -L --output ~/factorio-server.tar.xz
-tar -xJf ~/factorio-server.tar.xz -C ~/
-rm ~/factorio-server.tar.xz
+curl https://www.factorio.com/get-download/stable/headless/linux64 -s -L | tar -xJ -C ~/
 mkdir ~/factorio/saves/
 ```
 You should now notice a new folder called 'factorio' in your home directory. This contains the config and executable to run the
@@ -39,13 +36,17 @@ You can try to run the server with `~/factorio/bin/x64/factorio`. You should get
 means that you're missing the required x86-64 dependancies to run this dynamically linked executable. To fix that you'll need to
 download the dependancies as a container image with the following command.
 ```
-sudo qemu-debootstrap --arch=amd64 stable ~/factorio-runtime/ --variant=buildd
+sudo debootstrap --no-check-gpg --arch=amd64 stable ~/factorio-runtime/
 ```
 This downloads a copy of the debian filesystem onto your pi along with all standard x86-64 libraries and dependancies. The
 second command copies the emulator into the file tree for use in the containerized environment. Feel free to use a different
-x86-64 image if you like. You can now run your factorio server inside this container.
+x86-64 image if you like. You can now create your factorio server save file inside this container.
 ```
-sudo systemd-nspawn -D ~/factorio-runtime --bind=/home/$USER/factorio:/factorio /factorio/bin/x64/factorio --start-server-load-latest /factorio/saves/ --server-settings /factorio/data/server-settings.json
+sudo systemd-nspawn -D ~/factorio-runtime --bind=/home/$USER/factorio:/factorio /factorio/bin/x64/factorio --create /factorio/saves/[file name].zip --server-settings /factorio/data/server-settings.json
+```
+Then load your factorio server save file inside this container.
+```
+sudo systemd-nspawn -D ~/factorio-runtime --bind=/home/$USER/factorio:/factorio /factorio/bin/x64/factorio --start-server /factorio/saves/[file name].zip --server-settings /factorio/data/server-settings.json
 ```
 You can connect to your server in factorio using the ip address of your pi. For example, if your pi has ip address 10.0.0.2 then
 enter 10.0.0.2:34197 in the dialog box.
